@@ -234,9 +234,22 @@ class ImageViewerState extends State<ImageViewer> {
     }
   }
 
-  bool get useFullImage => settingsHandler.galleryMode.isFullRes
-      ? !widget.booruItem.toggleQuality.value
-      : widget.booruItem.toggleQuality.value;
+  bool get useFullImage {
+    // 69 mod: moving pictures (GIF / animated WebP) – the "sample" is often a still JPG, so use the real file
+    if (mod69IsMoving && !widget.booruItem.toggleQuality.value) return true;
+    return settingsHandler.galleryMode.isFullRes
+        ? !widget.booruItem.toggleQuality.value
+        : widget.booruItem.toggleQuality.value;
+  }
+
+  bool get mod69IsMoving {
+    final item = widget.booruItem;
+    if (item.mediaType.value.isAnimation) return true;
+    final ext = (item.fileExt ?? '').toLowerCase();
+    if (ext != 'webp' && ext != 'gif' && ext != 'apng') return false;
+    final sample = Uri.tryParse(item.sampleURL)?.path.toLowerCase() ?? '';
+    return !sample.endsWith('.$ext') || item.tagsList.any((t) => t.fullString == 'animated');
+  }
 
   Future<void> initViewer(
     bool ignoreTagsCheck, {
@@ -291,7 +304,7 @@ class ImageViewerState extends State<ImageViewer> {
       (imageInfo, syncCall) async {
         if (!_isCurrentLoad(loadGeneration)) return;
 
-        if (imageInfo.image.height >= settingsHandler.preloadHeight) {
+        if (imageInfo.image.height >= settingsHandler.preloadHeight && !mod69IsMoving) {
           await checkAndPrepareTiles(loadGeneration: loadGeneration);
         } else {
           isTilingProcessing.value = false;
@@ -433,6 +446,8 @@ class ImageViewerState extends State<ImageViewer> {
 
     // scale image only if it's not an animation, scaling is allowed, not on desktop and item is not marked as noScale
     if (!widget.booruItem.mediaType.value.isAnimation &&
+        !mod69IsMoving &&
+        (widget.booruItem.fileExt ?? '').toLowerCase() != 'webp' &&
         !settingsHandler.disableImageScaling &&
         !PlatformExt.isDesktop &&
         !widget.booruItem.isNoScale.value &&

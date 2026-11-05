@@ -587,7 +587,19 @@ class MainActivity: FlutterFragmentActivity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         }
-        
+        // 69 mod: offer 69-Material Files (opens at the last folder) next to the phone's own picker
+        val mf = Intent(intent).setPackage("me.zhanghai.android.files.mod69")
+        if (mf.resolveActivity(packageManager) != null) {
+            val chooser = Intent.createChooser(mf, "Choose folder with").apply {
+                putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(intent))
+            }
+            try {
+                startActivityForResult(chooser, 1)
+                return
+            } catch (e: Exception) {
+                Log.w("Mod69", "chooser failed", e)
+            }
+        }
         startActivityForResult(intent, 1)
     }
 

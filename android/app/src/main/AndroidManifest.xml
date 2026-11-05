@@ -9,6 +9,7 @@
     <uses-permission android:name="com.gor69.mediahelper.permission.USE" />
     <queries>
         <package android:name="com.gor69.mediahelper" />
+        <package android:name="me.zhanghai.android.files.mod69" />
     </queries>
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>

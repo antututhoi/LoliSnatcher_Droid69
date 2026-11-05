@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 // ignore_for_file: invalid_use_of_internal_member
 
 import 'dart:async';
@@ -335,6 +336,7 @@ class DioNetwork {
     String lengthHeader = Headers.contentLengthHeader,
     bool deleteOnError = true,
     Dio Function(Dio)? customInterceptor,
+    String? subDir,
   }) async {
     final client = customInterceptor != null ? customInterceptor(getClient()) : getClient();
     final urlAndQuery = separateUrlAndQueryParams(url, queryParameters);
@@ -385,7 +387,12 @@ class DioNetwork {
       mediaType,
       fileExt,
       savePath,
+      subDir: subDir,
     );
+
+    // 69 mod: send the file to Android in ~1 MB pieces instead of many tiny ones
+    final pending = BytesBuilder(copy: false);
+    const int batchSize = 1 << 20;
 
     Future<void>? asyncWrite;
     bool closed = false;
@@ -408,17 +415,23 @@ class DioNetwork {
     late StreamSubscription subscription;
     subscription = stream.listen(
       (data) {
+        pending.add(data);
+        if (pending.length < batchSize) {
+          onReceiveProgress?.call(received + pending.length, total);
+          return;
+        }
         subscription.pause();
+        final chunk = pending.takeBytes();
 
         // Write file asynchronously
-        asyncWrite = ServiceHandler.writeStreamToFileFromSAFDirectory(fileUri!, data)
+        asyncWrite = ServiceHandler.writeStreamToFileFromSAFDirectory(fileUri!, chunk)
             .then((result) {
               if (!result) {
                 throw Exception('Did not write file bytes');
               }
 
               // Notify progress
-              received += data.length;
+              received += chunk.length;
 
               onReceiveProgress?.call(received, total);
 
@@ -439,6 +452,12 @@ class DioNetwork {
       onDone: () async {
         try {
           await asyncWrite;
+          if (pending.length > 0) {
+            final ok = await ServiceHandler.writeStreamToFileFromSAFDirectory(fileUri!, pending.takeBytes());
+            if (!ok) {
+              throw Exception('Did not write file bytes');
+            }
+          }
           closed = true;
           await ServiceHandler.closeStreamToFileFromSAFDirectory(fileUri!);
           completer.complete(response);

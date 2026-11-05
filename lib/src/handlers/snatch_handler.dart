@@ -11,8 +11,10 @@ import 'package:lolisnatcher/src/data/booru_item.dart';
 import 'package:lolisnatcher/src/handlers/booru_handler.dart';
 import 'package:lolisnatcher/src/handlers/booru_handler_factory.dart';
 import 'package:lolisnatcher/src/handlers/navigation_handler.dart';
+import 'package:lolisnatcher/src/handlers/search_handler.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
 import 'package:lolisnatcher/src/services/image_writer.dart';
+import 'package:lolisnatcher/src/utils/tools.dart';
 import 'package:lolisnatcher/src/widgets/common/flash_elements.dart';
 import 'package:lolisnatcher/src/widgets/thumbnail/thumbnail_build.dart';
 
@@ -238,6 +240,7 @@ class SnatchHandler {
           item.ignoreExists,
           onCancelTokenCreate,
           _consumeRetryCurrent,
+          folder: item.folder,
         )
         .listen(
           (Map<String, dynamic> data) {
@@ -383,14 +386,25 @@ class SnatchHandler {
     }
   }
 
+  /// 69 mod: folder name from the tab's search (or the given tags), empty = no sub folder
+  static String mod69FolderFor(String? tags) {
+    if (!SettingsHandler.instance.mod69TabFolders) return '';
+    String t = (tags ?? SearchHandler.instance.currentTabOrNull?.tags ?? '').trim();
+    t = t.replaceAll(':', '_').replaceAll(RegExp(r'\s+'), ' ');
+    t = Tools.sanitize(t).trim();
+    if (t.length > 80) t = t.substring(0, 80).trim();
+    return t;
+  }
+
   void queue(
     List<BooruItem> booruItems,
     Booru booru,
     int cooldown,
-    bool ignoreExists,
-  ) {
+    bool ignoreExists, {
+    String? tags,
+  }) {
     if (booruItems.isNotEmpty) {
-      final SnatchItem item = SnatchItem(booruItems, cooldown, booru, ignoreExists);
+      final SnatchItem item = SnatchItem(booruItems, cooldown, booru, ignoreExists, folder: mod69FolderFor(tags));
       queuedList.add(item);
 
       if (booruItems.length > 1) {
@@ -479,7 +493,7 @@ class SnatchHandler {
       count = booruItems.length;
       // TODO error handling?
     }
-    queue(booruItems, booru, cooldown, false);
+    queue(booruItems, booru, cooldown, false, tags: tags);
   }
 
   void dispose() {
@@ -493,9 +507,11 @@ class SnatchItem {
     this.booruItems,
     this.cooldown,
     this.booru,
-    this.ignoreExists,
-  );
+    this.ignoreExists, {
+    this.folder = '',
+  });
 
+  final String folder;
   final List<BooruItem> booruItems;
   final int cooldown;
   final Booru booru;

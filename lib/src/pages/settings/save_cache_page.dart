@@ -34,6 +34,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
   late String extPathOverride;
   late ImageQuality snatchMode;
   bool jsonWrite = false,
+      mod69TabFolders = true,
       thumbnailCache = true,
       mediaCache = false,
       downloadNotifications = true,
@@ -64,6 +65,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
     extPathOverride = settingsHandler.extPathOverride;
     snatchMode = settingsHandler.snatchMode;
     jsonWrite = settingsHandler.jsonWrite;
+    mod69TabFolders = settingsHandler.mod69TabFolders;
     cacheDuration = settingsHandler.cacheDuration;
     cacheSizeController.text = settingsHandler.cacheSize.toString();
     downloadNotifications = settingsHandler.downloadNotifications;
@@ -126,6 +128,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
   Future<void> _onPopInvoked(_, _) async {
     settingsHandler.snatchCooldown = int.parse(snatchCooldownController.text);
     settingsHandler.jsonWrite = jsonWrite;
+    settingsHandler.mod69TabFolders = mod69TabFolders;
     settingsHandler.mediaCache = mediaCache;
     settingsHandler.thumbnailCache = thumbnailCache;
     settingsHandler.videoCacheMode = videoCacheMode;
@@ -285,6 +288,16 @@ class _SaveCachePageState extends State<SaveCachePage> {
                   ],
                 ),
                 title: context.loc.settings.cache.favouriteItemsOnSnatching,
+              ),
+              SettingsToggle(
+                value: mod69TabFolders,
+                onChanged: (newValue) {
+                  setState(() {
+                    mod69TabFolders = newValue;
+                  });
+                },
+                title: 'Save into a folder named after the tab',
+                subtitle: const Text('The folder gets the tab\'s search text, e.g. "blue_sky solo"'),
               ),
               SettingsToggle(
                 value: (!Platform.isAndroid || extPathOverride.isNotEmpty) && jsonWrite,

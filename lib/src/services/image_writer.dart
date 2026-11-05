@@ -32,10 +32,19 @@ class ImageWriter {
     Booru booru,
     void Function(int, int)? onProgress,
     bool ignoreExists,
-    void Function(CancelToken)? onCancelTokenCreate,
-  ) async {
+    void Function(CancelToken)? onCancelTokenCreate, {
+    String folder = '',
+  }) async {
     final String fileName = getFilename(item, booru);
     await setPaths();
+    final bool useSaf = Platform.isAndroid && settingsHandler.extPathOverride.isNotEmpty;
+    // 69 mod: sub folder (tab name). For normal folders it becomes part of the path.
+    final String path = (!useSaf && folder.isNotEmpty) ? '${this.path}$folder/' : this.path;
+    if (!useSaf && folder.isNotEmpty) {
+      try {
+        await Directory(path).create(recursive: true);
+      } catch (_) {}
+    }
 
     // Don't do anything if file already exists
     final File image = File(path + fileName);
@@ -82,6 +91,7 @@ class ImageWriter {
           headers: headers,
           onReceiveProgress: onProgress,
           cancelToken: cancelToken,
+          subDir: folder.isEmpty ? null : folder,
         );
       } else {
         await DioNetwork.download(
@@ -212,8 +222,9 @@ class ImageWriter {
     void Function(int, int)? onProgress,
     bool ignoreExists,
     void Function(CancelToken)? onCancelTokenCreate,
-    bool Function()? onRetryCurrent,
-  ) async* {
+    bool Function()? onRetryCurrent, {
+    String folder = '',
+  }) async* {
     int snatchedCounter = 1;
     final List<BooruItem> existsList = [], failedList = [], cancelledList = [];
     bool skipColldown = false;
@@ -232,6 +243,7 @@ class ImageWriter {
         onProgress,
         ignoreExists,
         onCancelTokenCreate,
+        folder: folder,
       );
       if (snatchResult == null) {
         existsList.add(snatched[i]);

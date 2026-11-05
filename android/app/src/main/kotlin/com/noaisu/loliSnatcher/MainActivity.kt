@@ -59,7 +59,18 @@ class MainActivity: FlutterFragmentActivity() {
     private var SAFUri: String? = ""
     private var methodResult: MethodChannel.Result? = null
 
-    private val activeFiles = mutableMapOf<Uri, OutputStream?>()
+    private val activeFiles = Collections.synchronizedMap(mutableMapOf<Uri, OutputStream?>())
+    // 69 mod: SAF writes run off the main thread, one after another (keeps the UI smooth on slow providers like rclone)
+    private val mod69SafIo = Executors.newSingleThreadExecutor()
+    private val mod69SubDirs = Collections.synchronizedMap(mutableMapOf<String, DocumentFile>())
+    private fun mod69Io(result: MethodChannel.Result, block: () -> Any?) {
+        mod69SafIo.execute {
+            val r = try { Result.success(block()) } catch (e: Throwable) { Result.failure(e) }
+            runOnUiThread {
+                r.fold({ result.success(it) }, { result.error("SAF_IO", it.message, null) })
+            }
+        }
+    }
 
     // url_launcher starts ACTION_VIEW intents through this Activity. Without
     // NEW_TASK, Android may place the external Activity in LoliSnatcher's task.
@@ -324,8 +335,9 @@ class MainActivity: FlutterFragmentActivity() {
                         val mediaType = call.argument<String>("mediaType")
                         val fileExt = call.argument<String>("fileExt")
                         val savePath = call.argument<String?>("savePath")
+                        val subDir = call.argument<String?>("subDir")
                         if (mediaType != null && fileExt != null && fileName != null && savePath != null) {
-                            result.success(createSafFile(fileName, mediaType, fileExt, savePath)?.toString())
+                            mod69Io(result) { createSafFile(fileName, mediaType, fileExt, savePath, subDir)?.toString() }
                         } else {
                             result.error("INVALID_ARGUMENT", "One or more arguments are null", null)
                         }
@@ -334,7 +346,7 @@ class MainActivity: FlutterFragmentActivity() {
                         val uri = call.argument<String>("uri")
                         val bytes = call.argument<ByteArray>("data")
                         if (uri != null && bytes != null) {
-                            result.success(writeSafFileStream(bytes, uri))
+                            mod69Io(result) { writeSafFileStream(bytes, uri) }
                         } else {
                             result.error("INVALID_ARGUMENT", "URI or data is null", null)
                         }
@@ -342,7 +354,7 @@ class MainActivity: FlutterFragmentActivity() {
                     "closeStreamToFile" -> {
                         val uri = call.argument<String>("uri")
                         if (uri != null) {
-                            result.success(closeSafFileStream(uri))
+                            mod69Io(result) { closeSafFileStream(uri) }
                         } else {
                             result.error("INVALID_ARGUMENT", "URI is null", null)
                         }
@@ -350,7 +362,7 @@ class MainActivity: FlutterFragmentActivity() {
                     "deleteStreamToFile" -> {
                         val uri = call.argument<String>("uri")
                         if (uri != null) {
-                            result.success(deleteSafFile(uri))
+                            mod69Io(result) { deleteSafFile(uri) }
                         } else {
                             result.error("INVALID_ARGUMENT", "URI is null", null)
                         }
@@ -772,18 +784,24 @@ class MainActivity: FlutterFragmentActivity() {
     }
 
     @Throws(IOException::class)
-    private fun createSafFile(fileName: String, mediaType: String, fileExt: String, savePath: String?): Uri? {
+    private fun createSafFile(fileName: String, mediaType: String, fileExt: String, savePath: String?, subDir: String? = null): Uri? {
         val thisMediaType = if (mediaType == "animation") "image" else mediaType
 
-        val doc = if (!savePath.isNullOrEmpty()) {
+        val root = if (!savePath.isNullOrEmpty()) {
             DocumentFile.fromTreeUri(applicationContext, Uri.parse(savePath))
         } else null
+        // 69 mod: optional sub folder (for example the tab name); looked up once and remembered
+        val doc = if (root != null && !subDir.isNullOrBlank()) {
+            val key = "$savePath|$subDir"
+            mod69SubDirs[key] ?: (root.findFile(subDir)?.takeIf { it.isDirectory } ?: root.createDirectory(subDir))
+                ?.also { mod69SubDirs[key] = it }
+        } else root
 
-        if (doc != null && doc.canWrite()) {
+        if (doc != null) {
             val newFile = doc.createFile("$thisMediaType/$fileExt", "$fileName.$fileExt") ?: return null
             val uri = newFile.uri
             try {
-                activeFiles[uri] = contentResolver.openOutputStream(uri)
+                activeFiles[uri] = contentResolver.openOutputStream(uri)?.let { BufferedOutputStream(it, 1 shl 20) }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Error opening output stream for SAF file", e)
                 newFile.delete()
@@ -836,12 +854,7 @@ class MainActivity: FlutterFragmentActivity() {
     @Throws(IOException::class)
     private fun writeSafFileStream(fileBytes: ByteArray, uriString: String): Boolean {
         val uri = Uri.parse(uriString) ?: return false
-        val document = DocumentFile.fromSingleUri(applicationContext, uri) ?: return false
-        if (!document.exists()) {
-            Log.e("MainActivity", "Document does not exist for URI: $uriString")
-            return false
-        }
-
+        // 69 mod: no provider query per chunk (that made downloads to rclone/SAF very slow)
         val outputStream = activeFiles[uri] ?: return false
         try {
             outputStream.write(fileBytes)
@@ -857,12 +870,6 @@ class MainActivity: FlutterFragmentActivity() {
         val uri = Uri.parse(uriString)
         if (uri == Uri.EMPTY) {
             Log.e("MainActivity", "Invalid URI: $uriString")
-            return false
-        }
-
-        val document = DocumentFile.fromSingleUri(applicationContext, uri)
-        if (document == null || !document.exists()) {
-            Log.e("MainActivity", "Document does not exist for URI: $uriString")
             return false
         }
 

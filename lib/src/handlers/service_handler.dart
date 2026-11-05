@@ -203,8 +203,9 @@ class ServiceHandler {
     String fileName,
     String mediaType,
     String fileExt,
-    String savePath,
-  ) async {
+    String savePath, {
+    String? subDir,
+  }) async {
     String? result;
     try {
       result = await platform.invokeMethod('createFileStream', {
@@ -212,6 +213,7 @@ class ServiceHandler {
         'mediaType': mediaType,
         'fileExt': fileExt,
         'savePath': savePath,
+        if (subDir != null && subDir.isNotEmpty) 'subDir': subDir,
       });
       log('created file $fileName $result');
     } catch (e) {

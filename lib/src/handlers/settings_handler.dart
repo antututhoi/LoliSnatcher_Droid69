@@ -161,6 +161,8 @@ class SettingsHandler {
   List<GalleryButton> disabledButtons = [];
 
   bool jsonWrite = false;
+  // 69 mod: save downloads into a folder named after the tab
+  bool mod69TabFolders = true;
   bool autoPlayEnabled = true;
   bool loadingGif = false;
   bool thumbnailCache = true;
@@ -535,6 +537,10 @@ class SettingsHandler {
     'jsonWrite': {
       'type': 'bool',
       'default': false,
+    },
+    'mod69TabFolders': {
+      'type': 'bool',
+      'default': true,
     },
     'autoPlayEnabled': {
       'type': 'bool',
@@ -1131,6 +1137,8 @@ class SettingsHandler {
         return galleryAutoScrollTime;
       case 'jsonWrite':
         return jsonWrite;
+      case 'mod69TabFolders':
+        return mod69TabFolders;
       case 'zoomButtonPosition':
         return zoomButtonPosition;
       case 'changePageButtonsPosition':
@@ -1383,6 +1391,9 @@ class SettingsHandler {
         break;
       case 'jsonWrite':
         jsonWrite = validatedValue;
+        break;
+      case 'mod69TabFolders':
+        mod69TabFolders = validatedValue;
         break;
       case 'zoomButtonPosition':
         zoomButtonPosition = validatedValue;

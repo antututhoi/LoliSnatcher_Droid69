@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:lolisnatcher/src/handlers/search_handler.dart';
 import 'package:lolisnatcher/src/handlers/service_handler.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
 import 'package:lolisnatcher/src/handlers/snatch_handler.dart';
@@ -86,6 +87,56 @@ class _Mod69SavePathBarState extends State<Mod69SavePathBar> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 69 mod: download every favourite loaded in this tab, then remove each one from favourites.
+class Mod69FavouritesSnatchButton extends StatelessWidget {
+  const Mod69FavouritesSnatchButton({super.key});
+
+  Future<void> _run(BuildContext context) async {
+    final tab = SearchHandler.instance.currentTabOrNull;
+    if (tab == null) return;
+    final items = tab.booruHandler.filteredFetched.where((e) => e.isFavourite.value == true).toList();
+    if (items.isEmpty) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(content: Text('No favourites loaded in this tab')),
+      );
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Download favourites, then remove them'),
+        content: Text(
+          '${items.length} favourites loaded in this tab will be downloaded. '
+          'Each one is removed from favourites after it is saved (also ones already downloaded).\n\n'
+          'Scroll the tab further first to load more.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Start')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    SnatchHandler.instance.queue(
+      items,
+      tab.booruHandler.booru,
+      SettingsHandler.instance.snatchCooldown,
+      false,
+      unfavourite: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      leading: const Icon(Icons.favorite_border),
+      title: const Text('Download favourites of this tab, then remove them'),
+      onTap: () => _run(context),
     );
   }
 }

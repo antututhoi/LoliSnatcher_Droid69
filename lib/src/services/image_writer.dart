@@ -34,6 +34,7 @@ class ImageWriter {
     bool ignoreExists,
     void Function(CancelToken)? onCancelTokenCreate, {
     String folder = '',
+    bool unfavourite = false,
   }) async {
     final String fileName = getFilename(item, booru);
     await setPaths();
@@ -53,6 +54,10 @@ class ImageWriter {
     // if (fileExists) return null;
     if (!ignoreExists && (fileExists || item.isSnatched.value == true)) {
       item.isSnatched.value = true;
+      // 69 mod: "download favourites, then remove them"
+      if (unfavourite && item.isFavourite.value == true) {
+        item.isFavourite.value = false;
+      }
       if (settingsHandler.dbEnabled) {
         await settingsHandler.dbHandler.updateBooruItem(item, BooruUpdateMode.local);
       }
@@ -229,6 +234,7 @@ class ImageWriter {
     void Function(CancelToken)? onCancelTokenCreate,
     bool Function()? onRetryCurrent, {
     String folder = '',
+    bool unfavourite = false,
   }) async* {
     int snatchedCounter = 1;
     final List<BooruItem> existsList = [], failedList = [], cancelledList = [];
@@ -249,10 +255,18 @@ class ImageWriter {
         ignoreExists,
         onCancelTokenCreate,
         folder: folder,
+        unfavourite: unfavourite,
       );
       if (snatchResult == null) {
         existsList.add(snatched[i]);
         skipColldown = true;
+        // 69 mod: already downloaded – still remove it from favourites
+        if (unfavourite && snatched[i].isFavourite.value == true) {
+          snatched[i].isFavourite.value = false;
+          if (settingsHandler.dbEnabled) {
+            await settingsHandler.dbHandler.updateBooruItem(snatched[i], BooruUpdateMode.local);
+          }
+        }
       } else if (snatchResult is! String) {
         if (snatchResult is DioException && CancelToken.isCancel(snatchResult)) {
           retryCurrent = onRetryCurrent?.call() ?? false;

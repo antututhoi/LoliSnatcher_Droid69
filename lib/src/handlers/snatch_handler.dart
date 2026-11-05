@@ -241,6 +241,7 @@ class SnatchHandler {
           onCancelTokenCreate,
           _consumeRetryCurrent,
           folder: item.folder,
+          unfavourite: item.unfavourite,
         )
         .listen(
           (Map<String, dynamic> data) {
@@ -402,9 +403,10 @@ class SnatchHandler {
     int cooldown,
     bool ignoreExists, {
     String? tags,
+    bool unfavourite = false,
   }) {
     if (booruItems.isNotEmpty) {
-      final SnatchItem item = SnatchItem(booruItems, cooldown, booru, ignoreExists, folder: mod69FolderFor(tags));
+      final SnatchItem item = SnatchItem(booruItems, cooldown, booru, ignoreExists, folder: mod69FolderFor(tags), unfavourite: unfavourite);
       queuedList.add(item);
 
       if (booruItems.length > 1) {
@@ -509,9 +511,12 @@ class SnatchItem {
     this.booru,
     this.ignoreExists, {
     this.folder = '',
+    this.unfavourite = false,
   });
 
   final String folder;
+  /// 69 mod: remove each item from favourites after it was downloaded
+  final bool unfavourite;
   final List<BooruItem> booruItems;
   final int cooldown;
   final Booru booru;

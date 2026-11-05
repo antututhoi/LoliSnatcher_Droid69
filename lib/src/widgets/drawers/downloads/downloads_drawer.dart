@@ -41,6 +41,7 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
         child: Column(
           children: [
             const Mod69SavePathBar(),
+            const Mod69FavouritesSnatchButton(),
             Expanded(child: DDContent(controller: controller)),
             DDControlPanel(
               controller: controller,

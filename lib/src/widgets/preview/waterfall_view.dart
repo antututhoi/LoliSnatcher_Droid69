@@ -13,6 +13,7 @@ import 'package:lolisnatcher/src/handlers/search_handler.dart';
 import 'package:lolisnatcher/src/handlers/service_handler.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
 import 'package:lolisnatcher/src/handlers/viewer_handler.dart';
+import 'package:lolisnatcher/src/mod69/mark_mode.dart';
 import 'package:lolisnatcher/src/pages/gallery_view_page.dart';
 import 'package:lolisnatcher/src/utils/clipboard.dart';
 import 'package:lolisnatcher/src/utils/extensions.dart';
@@ -354,7 +355,12 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
     }
   }
 
-  Future<void> onTap(int index) async {
+  Future<void> onTap(int index, {bool mod69Open = false}) async {
+    // 69 mod: in mark mode a tap marks / unmarks
+    if (!mod69Open && Mod69Mark.active) {
+      Mod69Mark.toggle(index);
+      return;
+    }
     if (isMobile) {
       // protection from opening multiple viewers at once
       if (!isActive.value) {
@@ -384,6 +390,7 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
             key: viewerKey,
             tab: currentTab,
             initialIndex: index,
+            mod69MarkMode: mod69Open,
             onPageChanged: onViewerPageChanged,
           ),
           opaque: false,
@@ -453,6 +460,12 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
     }
 
     final BooruItem item = currentFetched[index];
+    // 69 mod: in mark mode a long press opens the viewer with a big checkbox
+    if (Mod69Mark.active && isMobile) {
+      Mod69Mark.endDrag();
+      unawaited(onTap(index, mod69Open: true));
+      return;
+    }
     await ServiceHandler.vibrate();
 
     if (currentSelected.contains(item)) {
@@ -460,6 +473,13 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
     } else {
       currentTab.selected.add(item);
     }
+    // 69 mod: keep the finger down and drag to mark many
+    Mod69Mark.startDrag(index);
+  }
+
+  /// 69 mod: the checkbox on a thumbnail only marks, it never opens the viewer
+  Future<void> mod69OnSelected(int index) async {
+    Mod69Mark.toggle(index);
   }
 
   Future<void> onSecondaryTap(int index, BuildContext context) async {
@@ -566,7 +586,16 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
                         });
                       }
 
-                      return CustomScrollView(
+                      return Listener(
+                        onPointerMove: (e) => Mod69Mark.onPointerMove(
+                          e,
+                          searchHandler.gridScrollController,
+                          MediaQuery.sizeOf(context).height,
+                          MediaQuery.viewPaddingOf(context).top + kToolbarHeight,
+                        ),
+                        onPointerUp: (_) => Mod69Mark.endDrag(),
+                        onPointerCancel: (_) => Mod69Mark.endDrag(),
+                        child: CustomScrollView(
                         key: ValueKey('CustomScrollView-${searchHandler.currentTabId}'),
                         controller: searchHandler.gridScrollController,
                         physics: isLoadingAndNoItems
@@ -608,7 +637,7 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
                                       onDoubleTap: onDoubleTap,
                                       onLongPress: onLongPress,
                                       onSecondaryTap: (i) => onSecondaryTap(i, context),
-                                      onSelected: onLongPress,
+                                      onSelected: mod69OnSelected,
                                     ),
                                   );
                                 }
@@ -622,13 +651,29 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
                                     onDoubleTap: onDoubleTap,
                                     onLongPress: onLongPress,
                                     onSecondaryTap: (i) => onSecondaryTap(i, context),
-                                    onSelected: onLongPress,
+                                    onSelected: mod69OnSelected,
                                   ),
                                 );
                               },
                             ),
                           ),
                         ],
+                      ),
+                      );
+                    }),
+                  ),
+                  // 69 mod: mark mode bar
+                  Positioned(
+                    top: MediaQuery.viewPaddingOf(context).top + kToolbarHeight + 8,
+                    left: 0,
+                    right: 0,
+                    child: Obx(() {
+                      final count = searchHandler.currentSelectedOrNull?.length ?? 0;
+                      return AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: count == 0
+                            ? const SizedBox.shrink()
+                            : Center(child: Mod69MarkBar(count: count)),
                       );
                     }),
                   ),

@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:get/get.dart' show Obx;
+
 import 'package:photo_view/photo_view.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 
@@ -41,7 +43,11 @@ class GalleryViewPage extends StatefulWidget {
     this.canSelect = true,
     this.readOnly = false,
     this.onPageChanged,
+    this.mod69MarkMode = false,
   });
+
+  /// 69 mod: opened from mark mode – show a big checkbox for the current item
+  final bool mod69MarkMode;
 
   final SearchTab tab;
   final int initialIndex;
@@ -608,6 +614,46 @@ class _GalleryViewPageState extends State<GalleryViewPage> with RouteAware {
                       child: GalleryButtons(pageController: controller),
                     ),
                     const ViewerTutorial(),
+                    if (widget.mod69MarkMode)
+                      Positioned(
+                        right: 16,
+                        bottom: MediaQuery.viewPaddingOf(context).bottom + 96,
+                        child: ValueListenableBuilder(
+                          valueListenable: page,
+                          builder: (context, pageIndex, _) {
+                            return Obx(() {
+                              final list = widget.tab.booruHandler.filteredFetched;
+                              if (pageIndex >= list.length) return const SizedBox.shrink();
+                              final item = list[pageIndex];
+                              final marked = widget.tab.selected.contains(item);
+                              final scheme = Theme.of(context).colorScheme;
+                              return Material(
+                                color: marked ? scheme.primary : Colors.black54,
+                                shape: CircleBorder(side: BorderSide(color: Colors.white, width: 2)),
+                                child: InkWell(
+                                  customBorder: const CircleBorder(),
+                                  onTap: () {
+                                    if (marked) {
+                                      widget.tab.selected.remove(item);
+                                    } else {
+                                      widget.tab.selected.add(item);
+                                    }
+                                  },
+                                  child: SizedBox(
+                                    width: 72,
+                                    height: 72,
+                                    child: Icon(
+                                      marked ? Icons.check_rounded : Icons.check_box_outline_blank_rounded,
+                                      size: 40,
+                                      color: marked ? scheme.onPrimary : Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            });
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),

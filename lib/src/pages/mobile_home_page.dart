@@ -66,6 +66,12 @@ class _MobileHomeState extends State<MobileHome> {
       return false;
     }
 
+    // 69 mod: back leaves mark mode first
+    if (SearchHandler.instance.currentSelectedOrNull?.isNotEmpty ?? false) {
+      SearchHandler.instance.currentTabOrNull?.selected.clear();
+      return false;
+    }
+
     // ... otherwise, ask to close the app
     final bool? shouldPop = await showModalBottomSheet<bool>(
       context: context,

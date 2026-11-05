@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'package:lolisnatcher/src/mod69/mark_mode.dart';
+
 import 'package:get/get.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 
@@ -54,7 +56,11 @@ class ThumbnailCardBuild extends StatelessWidget {
       key: ValueKey(index),
       controller: scrollController,
       index: index,
-      child: Material(
+      // 69 mod: lets drag-marking find this thumbnail under the finger
+      child: MetaData(
+        metaData: Mod69ItemIndex(index),
+        behavior: HitTestBehavior.translucent,
+        child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(4),
         child: Stack(
@@ -114,6 +120,7 @@ class ThumbnailCardBuild extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

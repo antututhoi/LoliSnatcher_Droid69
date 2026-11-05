@@ -63,6 +63,68 @@ class MainActivity: FlutterFragmentActivity() {
     // 69 mod: SAF writes run off the main thread, one after another (keeps the UI smooth on slow providers like rclone)
     private val mod69SafIo = Executors.newSingleThreadExecutor()
     private val mod69SubDirs = Collections.synchronizedMap(mutableMapOf<String, DocumentFile>())
+    // 69 mod: folder + name of every SAF file made, so a converted copy can replace it
+    private val mod69SafParents = Collections.synchronizedMap(mutableMapOf<Uri, Pair<DocumentFile, String>>())
+
+    /** 69 mod: run the finished download through 69-Media Helper. Returns the (maybe new) uri or path. */
+    private fun mod69ProcessDownload(target: String): String {
+        if (!Mod69Helper.isInstalled(applicationContext)) return target
+        val isSaf = target.startsWith("content://")
+        val name: String
+        val tmp: File
+        if (isSaf) {
+            val uri = Uri.parse(target)
+            name = mod69SafParents[uri]?.second ?: (DocumentFile.fromSingleUri(applicationContext, uri)?.name ?: return target)
+            tmp = File(cacheDir, "mod69_in_" + System.nanoTime() + "_" + name)
+            contentResolver.openInputStream(uri)?.use { input -> tmp.outputStream().use { input.copyTo(it, 1 shl 20) } } ?: return target
+        } else {
+            val f = File(target)
+            if (!f.isFile) return target
+            name = f.name
+            tmp = f
+        }
+        val ext = name.substringAfterLast('.', "")
+        val r = try {
+            Mod69Helper.process(applicationContext, tmp, ext)
+        } catch (e: Exception) {
+            Log.w("Mod69", "helper failed", e)
+            null
+        }
+        if (r == null || !r.changed) {
+            if (isSaf) tmp.delete()
+            return target
+        }
+        val base = name.substringBeforeLast('.')
+        val newName = base + r.suffix + "." + r.extension
+        var result = target
+        try {
+            if (isSaf) {
+                val uri = Uri.parse(target)
+                val parent = mod69SafParents.remove(uri)?.first
+                if (parent != null) {
+                    val mime = r.mime ?: (MimeTypeMap.getSingleton().getMimeTypeFromExtension(r.extension) ?: "application/octet-stream")
+                    val doc = parent.createFile(mime, newName)
+                    if (doc != null) {
+                        contentResolver.openOutputStream(doc.uri)?.use { out -> r.file.inputStream().use { it.copyTo(out, 1 shl 20) } }
+                        DocumentFile.fromSingleUri(applicationContext, uri)?.delete()
+                        result = doc.uri.toString()
+                    }
+                }
+                tmp.delete()
+            } else {
+                val dest = File(tmp.parentFile, newName)
+                r.file.inputStream().use { input -> dest.outputStream().use { input.copyTo(it, 1 shl 20) } }
+                if (dest.absolutePath != tmp.absolutePath) tmp.delete()
+                MediaScannerConnection.scanFile(applicationContext, arrayOf(dest.absolutePath), null, null)
+                result = dest.absolutePath
+            }
+        } finally {
+            if (r.file.absolutePath != tmp.absolutePath) r.file.delete()
+        }
+        val summary = "$newName: ${Mod69Helper.sizeText(r.originalSize)} → ${Mod69Helper.sizeText(r.finalSize)}"
+        runOnUiThread { android.widget.Toast.makeText(applicationContext, summary, android.widget.Toast.LENGTH_SHORT).show() }
+        return result
+    }
     private fun mod69Io(result: MethodChannel.Result, block: () -> Any?) {
         mod69SafIo.execute {
             val r = try { Result.success(block()) } catch (e: Throwable) { Result.failure(e) }
@@ -351,6 +413,16 @@ class MainActivity: FlutterFragmentActivity() {
                             result.error("INVALID_ARGUMENT", "URI or data is null", null)
                         }
                     }
+                    "mod69Process" -> {
+                        val target = call.argument<String>("target")
+                        if (target != null) {
+                            mod69Io(result) { mod69ProcessDownload(target) }
+                        } else {
+                            result.error("INVALID_ARGUMENT", "target is null", null)
+                        }
+                    }
+                    "mod69HelperInstalled" -> result.success(Mod69Helper.isInstalled(applicationContext))
+                    "mod69HelperSettings" -> result.success(Mod69Helper.openSettings(this))
                     "closeStreamToFile" -> {
                         val uri = call.argument<String>("uri")
                         if (uri != null) {
@@ -800,6 +872,7 @@ class MainActivity: FlutterFragmentActivity() {
         if (doc != null) {
             val newFile = doc.createFile("$thisMediaType/$fileExt", "$fileName.$fileExt") ?: return null
             val uri = newFile.uri
+            mod69SafParents[uri] = Pair(doc, "$fileName.$fileExt")
             try {
                 activeFiles[uri] = contentResolver.openOutputStream(uri)?.let { BufferedOutputStream(it, 1 shl 20) }
             } catch (e: Exception) {

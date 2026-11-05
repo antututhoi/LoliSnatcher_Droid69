@@ -5,6 +5,11 @@
          additional functionality it is fine to subclass or reimplement
          FlutterApplication and put your custom class here. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 69 mod: hand downloads to 69-Media Helper -->
+    <uses-permission android:name="com.gor69.mediahelper.permission.USE" />
+    <queries>
+        <package android:name="com.gor69.mediahelper" />
+    </queries>
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>

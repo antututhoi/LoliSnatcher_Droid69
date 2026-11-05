@@ -92,6 +92,7 @@ class ImageWriter {
           onReceiveProgress: onProgress,
           cancelToken: cancelToken,
           subDir: folder.isEmpty ? null : folder,
+          mod69Process: settingsHandler.mod69UseHelper,
         );
       } else {
         await DioNetwork.download(
@@ -105,6 +106,10 @@ class ImageWriter {
           onReceiveProgress: onProgress,
           cancelToken: cancelToken,
         );
+        // 69 mod: convert with 69-Media Helper (normal folders)
+        if (Platform.isAndroid && settingsHandler.mod69UseHelper) {
+          await ServiceHandler.mod69Process('$path$fileName');
+        }
       }
 
       try {

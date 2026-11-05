@@ -35,6 +35,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
   late ImageQuality snatchMode;
   bool jsonWrite = false,
       mod69TabFolders = true,
+      mod69UseHelper = true,
       thumbnailCache = true,
       mediaCache = false,
       downloadNotifications = true,
@@ -66,6 +67,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
     snatchMode = settingsHandler.snatchMode;
     jsonWrite = settingsHandler.jsonWrite;
     mod69TabFolders = settingsHandler.mod69TabFolders;
+    mod69UseHelper = settingsHandler.mod69UseHelper;
     cacheDuration = settingsHandler.cacheDuration;
     cacheSizeController.text = settingsHandler.cacheSize.toString();
     downloadNotifications = settingsHandler.downloadNotifications;
@@ -129,6 +131,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
     settingsHandler.snatchCooldown = int.parse(snatchCooldownController.text);
     settingsHandler.jsonWrite = jsonWrite;
     settingsHandler.mod69TabFolders = mod69TabFolders;
+    settingsHandler.mod69UseHelper = mod69UseHelper;
     settingsHandler.mediaCache = mediaCache;
     settingsHandler.thumbnailCache = thumbnailCache;
     settingsHandler.videoCacheMode = videoCacheMode;
@@ -289,6 +292,22 @@ class _SaveCachePageState extends State<SaveCachePage> {
                 ),
                 title: context.loc.settings.cache.favouriteItemsOnSnatching,
               ),
+              SettingsToggle(
+                value: mod69UseHelper,
+                onChanged: (newValue) {
+                  setState(() {
+                    mod69UseHelper = newValue;
+                  });
+                },
+                title: 'Convert downloads with 69-Media Helper',
+                subtitle: const Text('Size / quality, GIF to MP4 (kept as GIF if MP4 is bigger), WebM, cover in videos – set in the helper'),
+              ),
+              if (Platform.isAndroid)
+                SettingsButton(
+                  name: '69-Media Helper settings',
+                  icon: const Icon(Icons.tune),
+                  action: ServiceHandler.mod69HelperSettings,
+                ),
               SettingsToggle(
                 value: mod69TabFolders,
                 onChanged: (newValue) {

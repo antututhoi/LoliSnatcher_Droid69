@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:lolisnatcher/src/mod69/save_path_bar.dart';
+
 import 'package:lolisnatcher/src/widgets/drawers/downloads/dd_content.dart';
 import 'package:lolisnatcher/src/widgets/drawers/downloads/dd_control_panel.dart';
 import 'package:lolisnatcher/src/widgets/drawers/downloads/dd_controller.dart';
@@ -38,6 +40,7 @@ class _DownloadsDrawerState extends State<DownloadsDrawer> {
       child: SafeArea(
         child: Column(
           children: [
+            const Mod69SavePathBar(),
             Expanded(child: DDContent(controller: controller)),
             DDControlPanel(
               controller: controller,

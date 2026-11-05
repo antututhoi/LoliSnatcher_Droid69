@@ -337,6 +337,7 @@ class DioNetwork {
     bool deleteOnError = true,
     Dio Function(Dio)? customInterceptor,
     String? subDir,
+    bool mod69Process = false,
   }) async {
     final client = customInterceptor != null ? customInterceptor(getClient()) : getClient();
     final urlAndQuery = separateUrlAndQueryParams(url, queryParameters);
@@ -460,6 +461,9 @@ class DioNetwork {
           }
           closed = true;
           await ServiceHandler.closeStreamToFileFromSAFDirectory(fileUri!);
+          if (mod69Process) {
+            await ServiceHandler.mod69Process(fileUri);
+          }
           completer.complete(response);
         } catch (e) {
           completer.completeError(

@@ -233,6 +233,30 @@ class ServiceHandler {
     return result;
   }
 
+  /// 69 mod: run a finished download through 69-Media Helper; returns the new uri / path.
+  static Future<String> mod69Process(String target) async {
+    try {
+      return await platform.invokeMethod<String>('mod69Process', {'target': target}) ?? target;
+    } catch (e) {
+      log(e);
+      return target;
+    }
+  }
+
+  static Future<bool> mod69HelperInstalled() async {
+    try {
+      return await platform.invokeMethod<bool>('mod69HelperInstalled') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> mod69HelperSettings() async {
+    try {
+      await platform.invokeMethod('mod69HelperSettings');
+    } catch (_) {}
+  }
+
   static Future<bool> closeStreamToFileFromSAFDirectory(String safUri) async {
     bool result = false;
     try {

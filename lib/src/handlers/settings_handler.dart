@@ -163,6 +163,8 @@ class SettingsHandler {
   bool jsonWrite = false;
   // 69 mod: save downloads into a folder named after the tab
   bool mod69TabFolders = true;
+  // 69 mod: send downloads to 69-Media Helper (convert / resize / GIF to MP4 / cover)
+  bool mod69UseHelper = true;
   bool autoPlayEnabled = true;
   bool loadingGif = false;
   bool thumbnailCache = true;
@@ -539,6 +541,10 @@ class SettingsHandler {
       'default': false,
     },
     'mod69TabFolders': {
+      'type': 'bool',
+      'default': true,
+    },
+    'mod69UseHelper': {
       'type': 'bool',
       'default': true,
     },
@@ -1139,6 +1145,8 @@ class SettingsHandler {
         return jsonWrite;
       case 'mod69TabFolders':
         return mod69TabFolders;
+      case 'mod69UseHelper':
+        return mod69UseHelper;
       case 'zoomButtonPosition':
         return zoomButtonPosition;
       case 'changePageButtonsPosition':
@@ -1394,6 +1402,9 @@ class SettingsHandler {
         break;
       case 'mod69TabFolders':
         mod69TabFolders = validatedValue;
+        break;
+      case 'mod69UseHelper':
+        mod69UseHelper = validatedValue;
         break;
       case 'zoomButtonPosition':
         zoomButtonPosition = validatedValue;

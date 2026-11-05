@@ -243,6 +243,12 @@ class ServiceHandler {
     }
   }
 
+  static Future<void> mod69PickerSettings() async {
+    try {
+      await platform.invokeMethod('mod69PickerSettings');
+    } catch (_) {}
+  }
+
   static Future<bool> mod69HelperInstalled() async {
     try {
       return await platform.invokeMethod<bool>('mod69HelperInstalled') ?? false;

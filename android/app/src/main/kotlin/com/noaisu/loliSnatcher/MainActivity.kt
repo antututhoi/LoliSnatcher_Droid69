@@ -421,6 +421,11 @@ class MainActivity: FlutterFragmentActivity() {
                             result.error("INVALID_ARGUMENT", "target is null", null)
                         }
                     }
+                    "mod69PickerSettings" -> {
+                        Mod69Picker.showSettingDialog(this, null)
+                        result.success(true)
+                    }
+                    "mod69PickerName" -> result.success(Mod69Picker.choiceName(this))
                     "mod69HelperInstalled" -> result.success(Mod69Helper.isInstalled(applicationContext))
                     "mod69HelperSettings" -> result.success(Mod69Helper.openSettings(this))
                     "closeStreamToFile" -> {
@@ -587,20 +592,12 @@ class MainActivity: FlutterFragmentActivity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         }
-        // 69 mod: offer 69-Material Files (opens at the last folder) next to the phone's own picker
-        val mf = Intent(intent).setPackage("me.zhanghai.android.files.mod69")
-        if (mf.resolveActivity(packageManager) != null) {
-            val chooser = Intent.createChooser(mf, "Choose folder with").apply {
-                putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(intent))
-            }
-            try {
-                startActivityForResult(chooser, 1)
-                return
-            } catch (e: Exception) {
-                Log.w("Mod69", "chooser failed", e)
-            }
+        // 69 mod: the chosen picker (69-Material Files / MiXplorer / phone)
+        try {
+            startActivityForResult(Mod69Picker.apply(this, intent), 1)
+        } catch (e: Exception) {
+            startActivityForResult(intent, 1)
         }
-        startActivityForResult(intent, 1)
     }
 
     private fun requestTemporaryDirectoryAccess() {
@@ -609,7 +606,7 @@ class MainActivity: FlutterFragmentActivity() {
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         }
 
-        startActivityForResult(intent, 1)
+        startActivityForResult(Mod69Picker.apply(this, intent), 1)
     }
 
     private fun requestImageAccess() {

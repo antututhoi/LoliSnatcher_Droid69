@@ -10,6 +10,12 @@
     <queries>
         <package android:name="com.gor69.mediahelper" />
         <package android:name="me.zhanghai.android.files.mod69" />
+        <package android:name="me.zhanghai.android.files" />
+        <package android:name="com.mixplorer.silver" />
+        <package android:name="com.mixplorer" />
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT_TREE" />
+        </intent>
     </queries>
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>

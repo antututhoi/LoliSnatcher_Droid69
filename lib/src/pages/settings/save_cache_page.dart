@@ -321,6 +321,13 @@ class _SaveCachePageState extends State<SaveCachePage> {
               ),
               if (Platform.isAndroid)
                 SettingsButton(
+                  name: 'Folder / file picker',
+                  subtitle: const Text('69-Material Files, MiXplorer or the phone\'s own picker'),
+                  icon: const Icon(Icons.folder_open),
+                  action: ServiceHandler.mod69PickerSettings,
+                ),
+              if (Platform.isAndroid)
+                SettingsButton(
                   name: '69-Media Helper settings',
                   icon: const Icon(Icons.tune),
                   action: ServiceHandler.mod69HelperSettings,

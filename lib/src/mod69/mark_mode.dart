@@ -122,9 +122,9 @@ class Mod69Mark {
     const edge = 90.0;
     final y = e.position.dy;
     if (y < topInset + edge) {
-      _autoScrollSpeed = -((topInset + edge - y) / edge * 24).clamp(4, 24);
+      _autoScrollSpeed = -((topInset + edge - y) / edge * 24).clamp(4.0, 24.0);
     } else if (y > viewHeight - edge) {
-      _autoScrollSpeed = ((y - (viewHeight - edge)) / edge * 24).clamp(4, 24);
+      _autoScrollSpeed = ((y - (viewHeight - edge)) / edge * 24).clamp(4.0, 24.0);
     } else {
       _autoScrollSpeed = 0;
     }
@@ -132,7 +132,7 @@ class Mod69Mark {
       _autoScroll = Timer.periodic(const Duration(milliseconds: 16), (_) {
         if (!controller.hasClients || _autoScrollSpeed == 0) return;
         final pos = controller.position;
-        final next = (pos.pixels + _autoScrollSpeed).clamp(pos.minScrollExtent, pos.maxScrollExtent);
+        final double next = (pos.pixels + _autoScrollSpeed).clamp(pos.minScrollExtent, pos.maxScrollExtent).toDouble();
         if (next != pos.pixels) controller.jumpTo(next);
         final g = _lastGlobal;
         if (g != null) {

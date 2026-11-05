@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:lolisnatcher/src/data/settings/image_quality.dart';
 import 'package:lolisnatcher/src/data/settings/video_cache_mode.dart';
 import 'package:lolisnatcher/src/handlers/service_handler.dart';
+import 'package:lolisnatcher/src/mod69/naming.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
 import 'package:lolisnatcher/src/services/image_writer.dart';
 import 'package:lolisnatcher/src/services/image_writer_isolate.dart';
@@ -29,6 +30,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
 
   final TextEditingController snatchCooldownController = TextEditingController();
   final TextEditingController cacheSizeController = TextEditingController();
+  final TextEditingController mod69NameController = TextEditingController();
 
   late VideoCacheMode videoCacheMode;
   late String extPathOverride;
@@ -68,6 +70,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
     jsonWrite = settingsHandler.jsonWrite;
     mod69TabFolders = settingsHandler.mod69TabFolders;
     mod69UseHelper = settingsHandler.mod69UseHelper;
+    mod69NameController.text = settingsHandler.mod69NameTemplate;
     cacheDuration = settingsHandler.cacheDuration;
     cacheSizeController.text = settingsHandler.cacheSize.toString();
     downloadNotifications = settingsHandler.downloadNotifications;
@@ -132,6 +135,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
     settingsHandler.jsonWrite = jsonWrite;
     settingsHandler.mod69TabFolders = mod69TabFolders;
     settingsHandler.mod69UseHelper = mod69UseHelper;
+    settingsHandler.mod69NameTemplate = mod69NameController.text.trim();
     settingsHandler.mediaCache = mediaCache;
     settingsHandler.thumbnailCache = thumbnailCache;
     settingsHandler.videoCacheMode = videoCacheMode;
@@ -291,6 +295,19 @@ class _SaveCachePageState extends State<SaveCachePage> {
                   ],
                 ),
                 title: context.loc.settings.cache.favouriteItemsOnSnatching,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  controller: mod69NameController,
+                  decoration: InputDecoration(
+                    labelText: 'File name template (empty = normal names)',
+                    hintText: '{artist} - {character} [{id}]',
+                    helperText: Mod69Naming.placeholders,
+                    helperMaxLines: 3,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
               ),
               SettingsToggle(
                 value: mod69UseHelper,

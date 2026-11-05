@@ -12,6 +12,7 @@ import 'package:lolisnatcher/src/data/booru_item.dart';
 import 'package:lolisnatcher/src/handlers/database_handler.dart';
 import 'package:lolisnatcher/src/handlers/service_handler.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
+import 'package:lolisnatcher/src/mod69/naming.dart';
 import 'package:lolisnatcher/src/services/saf_file_cache.dart';
 import 'package:lolisnatcher/src/utils/dio_network.dart';
 import 'package:lolisnatcher/src/utils/logger.dart';
@@ -212,6 +213,9 @@ class ImageWriter {
     } else {
       fileName = '${booru.name!}_${item.fileURL.substring(item.fileURL.lastIndexOf("/") + 1, lastIndex)}';
     }
+    // 69 mod: optional name template
+    final custom = Mod69Naming.build(settingsHandler.mod69NameTemplate, item, booru, fileName);
+    if (custom != null) fileName = custom;
     print('filename is $fileName');
     return fileName;
   }

@@ -165,6 +165,8 @@ class SettingsHandler {
   bool mod69TabFolders = true;
   // 69 mod: send downloads to 69-Media Helper (convert / resize / GIF to MP4 / cover)
   bool mod69UseHelper = true;
+  // 69 mod: file name template, empty = app default
+  String mod69NameTemplate = '';
   bool autoPlayEnabled = true;
   bool loadingGif = false;
   bool thumbnailCache = true;
@@ -547,6 +549,10 @@ class SettingsHandler {
     'mod69UseHelper': {
       'type': 'bool',
       'default': true,
+    },
+    'mod69NameTemplate': {
+      'type': 'string',
+      'default': '',
     },
     'autoPlayEnabled': {
       'type': 'bool',
@@ -1147,6 +1153,8 @@ class SettingsHandler {
         return mod69TabFolders;
       case 'mod69UseHelper':
         return mod69UseHelper;
+      case 'mod69NameTemplate':
+        return mod69NameTemplate;
       case 'zoomButtonPosition':
         return zoomButtonPosition;
       case 'changePageButtonsPosition':
@@ -1405,6 +1413,9 @@ class SettingsHandler {
         break;
       case 'mod69UseHelper':
         mod69UseHelper = validatedValue;
+        break;
+      case 'mod69NameTemplate':
+        mod69NameTemplate = validatedValue;
         break;
       case 'zoomButtonPosition':
         zoomButtonPosition = validatedValue;

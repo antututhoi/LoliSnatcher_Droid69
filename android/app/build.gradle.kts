@@ -47,7 +47,7 @@ println("LS_IS_STORE=${dartEnvVars["LS_IS_STORE"]}")
 val packageName = if (dartEnvVars["LS_IS_STORE"] == "true") {
     "com.noaisu.play.losn"
 } else {
-    "com.noaisu.loliSnatcher"
+    "com.noaisu.loliSnatcher.mod69"
 }
 val androidApiLevel = 37
 println("packageName=$packageName")

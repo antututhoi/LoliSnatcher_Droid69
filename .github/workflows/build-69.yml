@@ -1,0 +1,52 @@
+name: Build 69-LoliSnatcher
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'beta'
+          cache: true
+
+      - name: Prepare signing key (same key every build)
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then echo "::error::KEYSTORE_B64 secret missing"; exit 1; fi
+          echo "$KEYSTORE_B64" | base64 -d > android/app/upload-keystore.jks
+          printf 'storePassword=ytdlnis123\nkeyPassword=ytdlnis123\nkeyAlias=key0\nstoreFile=upload-keystore.jks\n' > android/key.properties
+
+      - name: Build (arm64 only)
+        run: |
+          sh gen_config.sh
+          flutter pub get
+          flutter build apk --release --target-platform android-arm64 \
+            --build-number=$((6000 + GITHUB_RUN_NUMBER)) \
+            --dart-define=LS_IS_STORE=false \
+            --dart-define-from-file=./config/secrets.json
+          mv build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/69-LoliSnatcher-${GITHUB_RUN_NUMBER}.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: 69-lolisnatcher-apk
+          path: build/app/outputs/flutter-apk/69-LoliSnatcher-*.apk
+          if-no-files-found: error

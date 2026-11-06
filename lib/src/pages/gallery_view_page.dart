@@ -614,7 +614,6 @@ class _GalleryViewPageState extends State<GalleryViewPage> with RouteAware {
                       child: GalleryButtons(pageController: controller),
                     ),
                     const ViewerTutorial(),
-                      ),
                   ],
                 ),
               ),

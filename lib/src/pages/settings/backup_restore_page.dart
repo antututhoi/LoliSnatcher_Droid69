@@ -86,6 +86,49 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     }
   }
 
+  static const List<String> mod69MascotExts = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+
+  /// 69 mod: copies the custom drawer mascot into the backup folder as "mascot.<ext>".
+  Future<void> mod69BackupMascot() async {
+    try {
+      final path = settingsHandler.drawerMascotPathOverride;
+      if (path.isEmpty) return;
+      final f = File(path);
+      if (!await f.exists()) return;
+      String ext = path.contains('.') ? path.split('.').last.toLowerCase() : 'png';
+      if (!mod69MascotExts.contains(ext)) ext = 'png';
+      for (final e in mod69MascotExts) {
+        await ServiceHandler.deleteFileFromSAFDirectory(backupPath, 'mascot.$e');
+      }
+      await ServiceHandler.writeImage(
+        await f.readAsBytes(),
+        'mascot',
+        ext == 'jpg' || ext == 'jpeg' ? 'image/jpeg' : 'image/$ext',
+        ext,
+        backupPath,
+      );
+    } catch (e, s) {
+      Logger.Inst().log(e.toString(), 'BackupRestorePage', 'mod69BackupMascot', LogTypes.exception, s: s);
+    }
+  }
+
+  /// 69 mod: puts "mascot.<ext>" from the backup back as the drawer mascot.
+  Future<void> mod69RestoreMascot() async {
+    try {
+      for (final e in mod69MascotExts) {
+        final bytes = await ServiceHandler.getFileFromSAFDirectory(backupPath, 'mascot.$e');
+        if (bytes == null || bytes.isEmpty) continue;
+        final target = File('${await ServiceHandler.getConfigDir()}mascot.$e');
+        await target.writeAsBytes(bytes, flush: true);
+        settingsHandler.drawerMascotPathOverride = target.path;
+        await settingsHandler.saveSettings(restate: false);
+        return;
+      }
+    } catch (e, s) {
+      Logger.Inst().log(e.toString(), 'BackupRestorePage', 'mod69RestoreMascot', LogTypes.exception, s: s);
+    }
+  }
+
   Future<void> backupDatabase() async {
     if (inProgress) return;
     setState(() => inProgress = true);
@@ -419,6 +462,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
                             'json',
                             backupPath,
                           );
+                          // 69 mod: the drawer mascot picture goes into the backup too
+                          await mod69BackupMascot();
                           showSnackbar(
                             context.loc.settings.backupAndRestore.settingsBackedUp,
                             isError: false,
@@ -577,6 +622,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
                             }
                             await newFile.writeAsBytes(settingsFileBytes);
                             await settingsHandler.loadSettingsJson();
+                            // 69 mod: and the drawer mascot picture, if the backup has one
+                            await mod69RestoreMascot();
                             if (settingsHandler.expandedSourceCompatibilityEnabled) {
                               await settingsHandler.saveSettings(restate: false);
                             }

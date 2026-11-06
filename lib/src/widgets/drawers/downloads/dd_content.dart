@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:lolisnatcher/src/handlers/snatch_handler.dart';
+import 'package:lolisnatcher/src/mod69/downloaded_log.dart';
 import 'package:lolisnatcher/src/widgets/drawers/downloads/dd_active_item.dart';
 import 'package:lolisnatcher/src/widgets/drawers/downloads/dd_controller.dart';
 import 'package:lolisnatcher/src/widgets/drawers/downloads/dd_empty_state.dart';
@@ -37,8 +38,10 @@ class DDContent extends StatelessWidget {
       final int totalRetryableAmount = existsLength + failedLength + cancelledLength;
 
       final int totalItems = totalActiveAmount + totalRetryableAmount;
+      // 69 mod: finished downloads list
+      final int doneLength = Mod69DownloadedLog.items.length;
 
-      if (totalItems == 0) {
+      if (totalItems == 0 && doneLength == 0) {
         return const DDEmptyState();
       }
 
@@ -50,6 +53,7 @@ class DDContent extends StatelessWidget {
         existsLength: existsLength,
         failedLength: failedLength,
         cancelledLength: cancelledLength,
+        doneLength: doneLength,
       );
     });
   }
@@ -64,6 +68,7 @@ class DDCombinedList extends StatelessWidget {
     required this.existsLength,
     required this.failedLength,
     required this.cancelledLength,
+    this.doneLength = 0,
     super.key,
   });
 
@@ -74,6 +79,7 @@ class DDCombinedList extends StatelessWidget {
   final int existsLength;
   final int failedLength;
   final int cancelledLength;
+  final int doneLength;
 
   @override
   Widget build(BuildContext context) {
@@ -81,12 +87,24 @@ class DDCombinedList extends StatelessWidget {
     final totalRetryableAmount = existsLength + failedLength + cancelledLength;
     final totalItems = totalActiveAmount + totalRetryableAmount;
 
+    final listItems = totalItems + (doneLength == 0 ? 0 : doneLength + 1);
+
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.symmetric(vertical: 16),
-      itemCount: totalItems,
-      itemExtent: 200,
+      itemCount: listItems,
+      itemExtentBuilder: (int index, _) {
+        if (index < totalItems) return 200;
+        return index == totalItems ? 56 : 100;
+      },
       itemBuilder: (BuildContext context, int index) {
+        // 69 mod: finished downloads, after everything else
+        if (index >= totalItems) {
+          if (index == totalItems) return const Mod69DoneHeader();
+          final done = Mod69DownloadedLog.items[index - totalItems - 1];
+          return Mod69DoneItem(done: done, handler: controller.getHandler(done.booru));
+        }
+
         // Active items (currently downloading)
         if (activeLength != 0 && index < activeLength) {
           return _buildActiveItem(index);

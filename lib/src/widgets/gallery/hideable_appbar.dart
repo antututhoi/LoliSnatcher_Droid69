@@ -251,9 +251,31 @@ class _HideableAppBarState extends State<HideableAppBar> {
       final bool isAutoscrollOverflowed = overFlowList.indexWhere((btn) => btn.isAutoscroll) != -1;
       final bool isSelectOverflowed = overFlowList.indexWhere((btn) => btn.isSelect) != -1;
 
-      final bool isSelected = widget.tab.selected.contains(
-        widget.tab.booruHandler.filteredFetched[page.value],
-      );
+      // 69 mod: while marking, a bigger tick box sits next to the menu on every item
+      // (empty for items that are not marked yet) – tap it to mark / unmark
+      if (isSelectOverflowed) {
+        final selectButton = overFlowList.firstWhere((btn) => btn.isSelect);
+        actions.add(
+          ValueListenableBuilder<int>(
+            valueListenable: page,
+            builder: (context, pageIndex, _) => Obx(() {
+            if (widget.tab.selected.isEmpty) return const SizedBox.shrink();
+            final list = widget.tab.booruHandler.filteredFetched;
+            final bool marked = pageIndex < list.length && widget.tab.selected.contains(list[pageIndex]);
+            return IconButton(
+              icon: Icon(
+                marked ? Icons.check_box : Icons.check_box_outline_blank,
+                color: Colors.white,
+                size: 30,
+              ),
+              onPressed: () async {
+                await buttonClick(selectButton)?.call();
+              },
+            );
+          }),
+          ),
+        );
+      }
 
       actions.add(
         PopupMenuButton(
@@ -270,12 +292,6 @@ class _HideableAppBarState extends State<HideableAppBar> {
                 ),
               Row(
                 children: [
-                  if (isSelected && isSelectOverflowed)
-                    const Icon(
-                      Icons.check_box,
-                      color: Colors.white,
-                      size: 18,
-                    ),
                   const Icon(
                     Icons.more_vert,
                     color: Colors.white,

@@ -67,7 +67,7 @@ class MainActivity: FlutterFragmentActivity() {
     private val mod69SafParents = Collections.synchronizedMap(mutableMapOf<Uri, Pair<DocumentFile, String>>())
 
     /** 69 mod: run the finished download through 69-Media Helper. Returns the (maybe new) uri or path. */
-    private fun mod69ProcessDownload(target: String): String {
+    private fun mod69ProcessDownload(target: String): Any {
         if (!Mod69Helper.isInstalled(applicationContext)) return target
         val isSaf = target.startsWith("content://")
         val name: String
@@ -121,9 +121,8 @@ class MainActivity: FlutterFragmentActivity() {
         } finally {
             if (r.file.absolutePath != tmp.absolutePath) r.file.delete()
         }
-        val summary = "$newName: ${Mod69Helper.sizeText(r.originalSize)} → ${Mod69Helper.sizeText(r.finalSize)}"
-        runOnUiThread { android.widget.Toast.makeText(applicationContext, summary, android.widget.Toast.LENGTH_SHORT).show() }
-        return result
+        // 69 mod: info goes to the "Downloaded" list in the downloads panel (no short popup)
+        return mapOf("path" to result, "name" to newName, "old" to r.originalSize, "new" to r.finalSize)
     }
     private fun mod69Io(result: MethodChannel.Result, block: () -> Any?) {
         mod69SafIo.execute {
@@ -426,6 +425,11 @@ class MainActivity: FlutterFragmentActivity() {
                         result.success(true)
                     }
                     "mod69PickerName" -> result.success(Mod69Picker.choiceName(this))
+                    "mod69PickerGet" -> result.success(Mod69Picker.choice(this))
+                    "mod69PickerSet" -> {
+                        Mod69Picker.set(this, call.argument<String>("value") ?: Mod69Picker.MATERIAL_FILES)
+                        result.success(true)
+                    }
                     "mod69HelperInstalled" -> result.success(Mod69Helper.isInstalled(applicationContext))
                     "mod69HelperSettings" -> result.success(Mod69Helper.openSettings(this))
                     "closeStreamToFile" -> {
@@ -484,7 +488,7 @@ class MainActivity: FlutterFragmentActivity() {
                         if (uri != null) {
                             val permissions =
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                                        this.contentResolver.persistedUriPermissions.takeWhile { it.isReadPermission && it.isWritePermission }
+                                        this.contentResolver.persistedUriPermissions.filter { it.isReadPermission && it.isWritePermission }
                                     } else {
                                         emptyList()
                                     }
@@ -493,32 +497,28 @@ class MainActivity: FlutterFragmentActivity() {
                                 methodResult = result
                                 requestDirectoryAccess()
                             } else {
-                                var testFile: DocumentFile? = null
-                                try {
-                                    val cr = this.contentResolver
-                                    val docFile: DocumentFile? = DocumentFile.fromTreeUri(applicationContext, Uri.parse(uri))
-                                    val newFile = docFile?.createFile("text/*", "testpersist")
-                                    testFile = newFile
-                                    if (newFile == null) {
-                                        result.error("FILE_NOT_FOUND", "File not found", null)
-                                    } else {
-                                        val output = "test writing"
-                                        val stream = cr.openOutputStream(newFile.uri)
-                                        if (stream == null) {
-                                            result.error("IO_ERROR", "IO error", null)
-                                        } else {
-                                            stream.use { it.write(output.toByteArray()) }
-                                            result.success("ok")
-                                        }
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e("MainActivity", "Error testing SAF", e)
-                                    result.error("ERROR", "Error testing SAF", null)
-                                } finally {
+                                // 69 mod: test in the background with a normal mime type (rclone / RSAF refused "text/*"
+                                // and blocked the screen); a writable folder also counts as OK
+                                mod69Io(result) {
+                                    var testFile: DocumentFile? = null
                                     try {
-                                        testFile?.delete()
-                                    } catch (e: Exception) {
-                                        Log.e("MainActivity", "Error cleaning up SAF test file", e)
+                                        val docFile: DocumentFile? = DocumentFile.fromTreeUri(applicationContext, Uri.parse(uri))
+                                        val newFile = docFile?.createFile("text/plain", "testpersist.txt")
+                                        testFile = newFile
+                                        if (newFile != null) {
+                                            contentResolver.openOutputStream(newFile.uri)?.use { it.write("test writing".toByteArray()) }
+                                            "ok"
+                                        } else if (docFile != null && docFile.canWrite()) {
+                                            "ok"
+                                        } else {
+                                            throw IllegalStateException("cannot write to folder")
+                                        }
+                                    } finally {
+                                        try {
+                                            testFile?.delete()
+                                        } catch (e: Exception) {
+                                            Log.e("MainActivity", "Error cleaning up SAF test file", e)
+                                        }
                                     }
                                 }
                             }

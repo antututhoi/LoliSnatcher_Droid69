@@ -12,6 +12,7 @@ import 'package:lolisnatcher/src/data/booru_item.dart';
 import 'package:lolisnatcher/src/handlers/database_handler.dart';
 import 'package:lolisnatcher/src/handlers/service_handler.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
+import 'package:lolisnatcher/src/mod69/downloaded_log.dart';
 import 'package:lolisnatcher/src/mod69/naming.dart';
 import 'package:lolisnatcher/src/services/saf_file_cache.dart';
 import 'package:lolisnatcher/src/utils/dio_network.dart';
@@ -119,7 +120,8 @@ class ImageWriter {
       }
 
       try {
-        if (settingsHandler.jsonWrite) {
+        // 69 mod: only when "write JSON" is really on and shown as on (it is only allowed with a custom folder)
+        if (settingsHandler.jsonWrite && (!Platform.isAndroid || settingsHandler.extPathOverride.isNotEmpty)) {
           if (Platform.isAndroid &&
               settingsHandler.extPathOverride.isNotEmpty &&
               await ServiceHandler.getAndroidSDKVersion() >= 31) {
@@ -156,6 +158,8 @@ class ImageWriter {
       }
 
       print('Image written: $path$fileName');
+      // 69 mod: show it in the downloads panel
+      Mod69DownloadedLog.add(item, booru, fileName);
       SAFFileCache.instance.onFileCreated(fileName);
       item.isSnatched.value = true;
       if (settingsHandler.dbEnabled) {

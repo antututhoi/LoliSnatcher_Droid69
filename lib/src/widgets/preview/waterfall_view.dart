@@ -662,21 +662,6 @@ class _WaterfallViewState extends State<WaterfallView> with RouteAware {
                       );
                     }),
                   ),
-                  // 69 mod: mark mode bar
-                  Positioned(
-                    top: MediaQuery.viewPaddingOf(context).top + kToolbarHeight + 8,
-                    left: 0,
-                    right: 0,
-                    child: Obx(() {
-                      final count = searchHandler.currentSelectedOrNull?.length ?? 0;
-                      return AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: count == 0
-                            ? const SizedBox.shrink()
-                            : Center(child: Mod69MarkBar(count: count)),
-                      );
-                    }),
-                  ),
                   Positioned(
                     bottom: MediaQuery.viewPaddingOf(context).bottom + 120,
                     right: settingsHandler.scrollGridButtonsPosition.isRight

@@ -31,6 +31,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
   final TextEditingController snatchCooldownController = TextEditingController();
   final TextEditingController cacheSizeController = TextEditingController();
   final TextEditingController mod69NameController = TextEditingController();
+  String mod69Picker = 'materialfiles';
 
   late VideoCacheMode videoCacheMode;
   late String extPathOverride;
@@ -71,6 +72,11 @@ class _SaveCachePageState extends State<SaveCachePage> {
     mod69TabFolders = settingsHandler.mod69TabFolders;
     mod69UseHelper = settingsHandler.mod69UseHelper;
     mod69NameController.text = settingsHandler.mod69NameTemplate;
+    if (Platform.isAndroid) {
+      ServiceHandler.mod69PickerGet().then((v) {
+        if (mounted && v != null) setState(() => mod69Picker = v);
+      });
+    }
     cacheDuration = settingsHandler.cacheDuration;
     cacheSizeController.text = settingsHandler.cacheSize.toString();
     downloadNotifications = settingsHandler.downloadNotifications;
@@ -296,17 +302,21 @@ class _SaveCachePageState extends State<SaveCachePage> {
                 ),
                 title: context.loc.settings.cache.favouriteItemsOnSnatching,
               ),
+              SettingsTextInput(
+                controller: mod69NameController,
+                title: '69- File name (empty = normal names)',
+                hintText: '%date% - %artist% - %copyright% - %md5%.%ext%',
+                titleAsLabel: true,
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+                clearable: true,
+                autocorrect: false,
+                enableSuggestions: false,
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
-                  controller: mod69NameController,
-                  decoration: InputDecoration(
-                    labelText: 'File name template (empty = normal names)',
-                    hintText: '{artist} - {character} [{id}]',
-                    helperText: Mod69Naming.placeholders,
-                    helperMaxLines: 3,
-                    border: const OutlineInputBorder(),
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text(
+                  'Use: ${Mod69Naming.placeholders}',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
               SettingsToggle(
@@ -316,19 +326,31 @@ class _SaveCachePageState extends State<SaveCachePage> {
                     mod69UseHelper = newValue;
                   });
                 },
-                title: 'Convert downloads with 69-Media Helper',
+                title: '69- Convert downloads with 69-Media Helper',
                 subtitle: const Text('Size / quality, GIF to MP4 (kept as GIF if MP4 is bigger), WebM, cover in videos – set in the helper'),
               ),
               if (Platform.isAndroid)
-                SettingsButton(
-                  name: 'Folder / file picker',
-                  subtitle: const Text('69-Material Files, MiXplorer or the phone\'s own picker'),
-                  icon: const Icon(Icons.folder_open),
-                  action: ServiceHandler.mod69PickerSettings,
+                SettingsDropdown<String>(
+                  value: mod69Picker,
+                  items: const ['materialfiles', 'mixplorer', 'system'],
+                  onChanged: (String? newValue) {
+                    if (newValue == null) return;
+                    setState(() {
+                      mod69Picker = newValue;
+                    });
+                    ServiceHandler.mod69PickerSet(newValue);
+                  },
+                  title: '69- Folder / file picker',
+                  trailingIcon: const Icon(Icons.folder_open),
+                  itemTitleBuilder: (String? v) => switch (v) {
+                    'mixplorer' => 'MiXplorer',
+                    'system' => "Phone's own picker",
+                    _ => '69-Material Files',
+                  },
                 ),
               if (Platform.isAndroid)
                 SettingsButton(
-                  name: '69-Media Helper settings',
+                  name: '69- Media Helper settings',
                   icon: const Icon(Icons.tune),
                   action: ServiceHandler.mod69HelperSettings,
                 ),
@@ -339,7 +361,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
                     mod69TabFolders = newValue;
                   });
                 },
-                title: 'Save into a folder named after the tab',
+                title: '69- Save into a folder named after the tab',
                 subtitle: const Text('The folder gets the tab\'s search text, e.g. "blue_sky solo"'),
               ),
               SettingsToggle(
@@ -352,7 +374,7 @@ class _SaveCachePageState extends State<SaveCachePage> {
                 enabled: !Platform.isAndroid || extPathOverride.isNotEmpty,
                 title: context.loc.settings.cache.writeImageDataOnSave,
                 subtitle: (!Platform.isAndroid || extPathOverride.isNotEmpty)
-                    ? null
+                    ? const Text('69- Turn off to stop the extra .json file next to every download')
                     : Text(context.loc.settings.cache.requiresCustomStorageDirectory),
               ),
               SettingsButton(

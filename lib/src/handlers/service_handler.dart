@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'package:path_provider/path_provider.dart';
 
+import 'package:lolisnatcher/src/mod69/downloaded_log.dart';
 import 'package:lolisnatcher/src/handlers/settings_handler.dart';
 import 'package:lolisnatcher/src/services/saf_file_cache.dart';
 import 'package:lolisnatcher/src/utils/extensions.dart';
@@ -236,11 +237,34 @@ class ServiceHandler {
   /// 69 mod: run a finished download through 69-Media Helper; returns the new uri / path.
   static Future<String> mod69Process(String target) async {
     try {
-      return await platform.invokeMethod<String>('mod69Process', {'target': target}) ?? target;
+      final r = await platform.invokeMethod<dynamic>('mod69Process', {'target': target});
+      if (r is Map) {
+        Mod69DownloadedLog.lastProcessed = (
+          name: r['name']?.toString() ?? '',
+          oldSize: (r['old'] as num?)?.toInt() ?? 0,
+          newSize: (r['new'] as num?)?.toInt() ?? 0,
+        );
+        return r['path']?.toString() ?? target;
+      }
+      return r?.toString() ?? target;
     } catch (e) {
       log(e);
       return target;
     }
+  }
+
+  static Future<String?> mod69PickerGet() async {
+    try {
+      return await platform.invokeMethod<String>('mod69PickerGet');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> mod69PickerSet(String value) async {
+    try {
+      await platform.invokeMethod('mod69PickerSet', {'value': value});
+    } catch (_) {}
   }
 
   static Future<void> mod69PickerSettings() async {
